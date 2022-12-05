@@ -1,0 +1,8 @@
+# Auto generated folders
+
+bin/*
+obj/*
+
+# Visual studio cache
+
+.vs/*
