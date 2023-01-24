@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections;
+using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace Bank{
 
@@ -13,16 +15,10 @@ namespace Bank{
 
             int choice;
             String? username, password, email, reEnteredPassword;   
-            Account a = new Account("jad", "064123", "Jad Maalouf", "jad@gmail.com");
-            Account b = new Account("jana", "064123", "Jana Maalouf", "jana@gmail.com");
-            List<Account> accounts = new List<Account>();
-
-            accounts.Add(a);
-            accounts.Add(b);
 
             home_menu: do{
 
-                home_menu();
+                HomeMenu();
 
                 Console.Write("\nEnter the number of the option you want: ");
                 choice = Convert.ToInt32(Console.ReadLine());
@@ -34,166 +30,221 @@ namespace Bank{
                         Console.WriteLine("\nGoodbye!");
                         
                         break;
+
                     case 1:
 
-                        Console.Write("\nEnter your username: ");
+                        Console.Write("\nEnter your username or \"cancel\" to cancel: ");
                         username = Console.ReadLine();
 
-                        Console.Write("\nEnter your password: ");
-                        password = Console.ReadLine();
 
-                        if(rightLogin(username, password, accounts) != null){
-                            
-                            main: do{
-                                Account? account = rightLogin(username, password, accounts);
-    
-                                mainMenu(account?.FullName);
+                        if (!username!.Equals("cancel", StringComparison.OrdinalIgnoreCase)) { 
+                           
+                            Console.Write("\nEnter your password  or \"cancel\" to cancel: ");
+                            password = Console.ReadLine();
 
-                                Console.Write("\nEnter the number of the option you want: ");
-                                choice = Convert.ToInt32(Console.ReadLine());
-    
-                                
-                                switch (choice){
-    
-                                    case 0: 
-    
-                                        Console.WriteLine("\nGoodbye!");
-    
-                                        break;
-                                    case 1: continue;
-    
-                                    case 2: 
-    
-                                        Console.WriteLine(account?.toString());
-    
-                                        break; 
-                                    case 3:
-    
-                                        Console.WriteLine("\nYou have $" + account?.getBalance() + " in your account");
-    
-                                        break;
-                                    case 4: 
+                            if (!password!.Equals("cancel", StringComparison.OrdinalIgnoreCase)) {
 
-                                        Console.WriteLine("\nYou have have $" + account?.getBalance() + " in your account");
-                                        Console.Write("\nEnter the amount you want to withdraw or enter 0 to cancel: ");
-                                        int amountToWithdraw = Convert.ToInt32(Console.ReadLine());
+                                if (RightLogin(username, password) != null)
+                                {
 
-                                        if(amountToWithdraw !=0 ){
-                                            Console.Write("\nAre you sure you want to continue: ");
-                                            String? answer = Console.ReadLine();
+                                main: do
+                                    {
 
-                                            if(answer!.Equals("yes", StringComparison.OrdinalIgnoreCase)) account?.withdraw(amountToWithdraw);
+                                        Account? account = RightLogin(username, password);
 
-                                        }
-                                        break;
-                                    case 5:
-                                        
-                                        Console.Write("\nEnter the amount you want to add or enter 0 to cancel: ");
-                                        int amountToAdd = Convert.ToInt32(Console.ReadLine());
+                                        MainMenu(account?.FullName);
 
-                                        if(amountToAdd !=0 ){
-                                            Console.Write("\nAre you sure you want to continue: ");
-                                            String? answer = Console.ReadLine();
+                                        Console.Write("\nEnter the number of the option you want: ");
+                                        choice = Convert.ToInt32(Console.ReadLine());
 
-                                            if(answer!.Equals("yes", StringComparison.OrdinalIgnoreCase)){
-                                                account?.add(amountToAdd);
-                                                Console.WriteLine("\nAdded successfully, your new balance is $" + account?.getBalance());
-                                            }
-                                        }
-                                        break;
-                                    case 6:
 
-                                        String? target;
+                                        switch (choice)
+                                        {
 
-                                        do{
-                                            Console.Write("\nEnter the username of the account you want to transfer to or type \"cancel\" to cancel: ");
-                                            target = Console.ReadLine();
-    
-                                            if(!target!.Equals("cancel", StringComparison.OrdinalIgnoreCase)){
-                                                
-                                                
-                                                if(exists(target, accounts) != null){
-            
-                                                    Account? targetAccount = exists(target, accounts); 
-        
-                                                    Console.WriteLine("\nYou have have $" + account?.getBalance() + " in your account");
-        
-                                                    Console.Write("\nEnter the amount you want to transfer or enter 0 to cancel: ");
-                                                    int amountToTransfer = Convert.ToInt32(Console.ReadLine());
-        
-                                                    if(amountToTransfer != 0 ){
-        
-                                                        Console.Write("\nAre you sure you want to continue: ");
-                                                        String? answer = Console.ReadLine();
-        
-                                                        if(answer!.Equals("yes", StringComparison.OrdinalIgnoreCase)){
-                                                            account?.transfer(targetAccount, amountToTransfer);
-            
-                                                            Console.WriteLine("\nTransfer successfully, your new balance is $" + account?.getBalance());
-                                                        }
-                                                    }
+                                            case 0:
+
+                                                Console.WriteLine("\nGoodbye!");
+
+                                                break;
+
+                                            case 1: continue;
+
+                                            case 2:
+
+                                                Console.WriteLine(account?.toString());
+
+                                                break;
+
+                                            case 3:
+
+                                                Console.WriteLine("\nYou have $" + account?.getBalance() + " in your account");
+
+                                                break;
+
+                                            case 4:
+
+                                                Console.WriteLine("\nYou have have $" + account?.getBalance() + " in your account");
+                                                Console.Write("\nEnter the amount you want to withdraw or enter 0 to cancel: ");
+                                                int amountToWithdraw = Convert.ToInt32(Console.ReadLine());
+
+                                                if (amountToWithdraw != 0)
+                                                {
+                                                    Console.Write("\nAre you sure you want to continue: ");
+                                                    String? answer = Console.ReadLine();
+
+                                                    if (answer!.Equals("yes", StringComparison.OrdinalIgnoreCase)) account?.withdraw(amountToWithdraw);
+
                                                 }
-            
-                                                else Console.WriteLine("\nThe account does not exist, please try again");
-                                            }
-                                        }while(exists(target, accounts) == null && !target!.Equals("cancel", StringComparison.OrdinalIgnoreCase)); 
+                                                break;
 
-                                        break;
-                                    case 7:
+                                            case 5:
 
-                                        String? newPassword;
-                                        String? oldPassword;
+                                                Console.Write("\nEnter the amount you want to add or enter 0 to cancel: ");
+                                                int amountToAdd = Convert.ToInt32(Console.ReadLine());
 
-                                        do{
-                                            Console.Write("\nEnter your current password or \"cancel\" to cancel: ");
-                                            oldPassword = Console.ReadLine();
+                                                if (amountToAdd != 0)
+                                                {
+                                                    Console.Write("\nAre you sure you want to continue: ");
+                                                    String? answer = Console.ReadLine();
 
-                                            if(!oldPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase)){
-                                                if(!account!.Password!.Equals(oldPassword)) Console.WriteLine("\nPassword does not match, please try again");
-                                            }
-                                        }while(!account!.Password!.Equals(oldPassword) && !oldPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase));
+                                                    if (answer!.Equals("yes", StringComparison.OrdinalIgnoreCase)) account?.add(amountToAdd);
 
-                                        if(!oldPassword.Equals("cancel", StringComparison.OrdinalIgnoreCase)){
+                                                }
+                                                break;
 
-                                            
-                                            Console.Write("\nEnter your new password or \"cancel\" to cancel: ");
-                                            newPassword = Console.ReadLine();
+                                            case 6:
 
-                                            if(!newPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase)){
+                                                String? target;
 
-                                                do{
-        
-                                                    Console.Write("\nEnter your new password again or \"cancel\" to cancel: ");
-                                                    reEnteredPassword = Console.ReadLine();
+                                                do
+                                                {
 
-                                                    if(!reEnteredPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase)){
+                                                    Console.Write("\nEnter the username of the account you want to transfer to or type \"cancel\" to cancel: ");
+                                                    target = Console.ReadLine();
 
-                                                        if(!newPassword!.Equals(reEnteredPassword)) Console.WriteLine("\nThe passwords doesn't match, please enter the password again."); 
+                                                    if (!target!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                                    {
+
+
+                                                        if (Exists(target) != null)
+                                                        {
+
+                                                            Account? targetAccount = Exists(target);
+
+                                                            Console.WriteLine("\nYou have have $" + account?.getBalance() + " in your account");
+
+                                                            Console.Write("\nEnter the amount you want to transfer or enter 0 to cancel: ");
+                                                            int amountToTransfer = Convert.ToInt32(Console.ReadLine());
+
+                                                            if (amountToTransfer != 0)
+                                                            {
+
+                                                                Console.Write("\nAre you sure you want to continue: ");
+                                                                String? answer = Console.ReadLine();
+
+                                                                if (answer!.Equals("yes", StringComparison.OrdinalIgnoreCase)) account?.transfer(targetAccount, amountToTransfer);
+
+                                                            }
+                                                        }
+
+                                                        else Console.WriteLine("\nThe account does not exist, please try again");
+                                                    }
+
+                                                } while (Exists(target) == null && !target!.Equals("cancel", StringComparison.OrdinalIgnoreCase));
+
+                                                break;
+
+                                            case 7:
+
+                                                String? newPassword;
+                                                String? oldPassword;
+
+                                                do
+                                                {
+                                                    Console.Write("\nEnter your current password or \"cancel\" to cancel: ");
+                                                    oldPassword = Console.ReadLine();
+
+                                                    if (!oldPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                                    {
+
+                                                        if (!account!.Password!.Equals(oldPassword)) Console.WriteLine("\nPassword does not match, please try again");
+
+                                                    }
+                                                } while (!account!.Password!.Equals(oldPassword) && !oldPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase));
+
+                                                if (!oldPassword.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                                {
+
+
+                                                    Console.Write("\nEnter your new password or \"cancel\" to cancel: ");
+                                                    newPassword = Console.ReadLine();
+
+                                                    if (!newPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                                    {
+
+                                                        do
+                                                        {
+
+                                                            Console.Write("\nEnter your new password again or \"cancel\" to cancel: ");
+                                                            reEnteredPassword = Console.ReadLine();
+
+                                                            if (!reEnteredPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                                            {
+
+                                                                if (!newPassword!.Equals(reEnteredPassword)) Console.WriteLine("\nThe passwords doesn't match, please enter the password again.");
+
+                                                            }
+
+
+                                                        } while (!newPassword!.Equals(reEnteredPassword) && !reEnteredPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase));
+
+                                                        account.changePassword(newPassword);
+
+                                                        goto home_menu;
+                                                    }
+
+                                                }
+
+                                                goto main;
+
+                                            case 8:
+
+                                                Console.Write("\nAre you sure you want to delete your account: ");
+                                                String? input = Console.ReadLine();
+
+                                                if (input!.Equals("yes", StringComparison.OrdinalIgnoreCase))
+                                                {
+
+                                                    if (DeleteAccount(account!.Username))
+                                                    {
+
+                                                        Console.WriteLine("\nYour account has been deleted succesfully");
+
+                                                        goto home_menu;
 
                                                     }
 
-        
-                                                }while(!newPassword!.Equals(reEnteredPassword) && !reEnteredPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase));
-        
-                                                account.changePassword(newPassword);
-            
-                                                Console.WriteLine("\nPassword changed successfully, please sign in again");
-        
-                                                goto home_menu;
-                                            }
+                                                    else Console.WriteLine("\nAccount deletion failed");
 
+                                                }
+
+                                                break;
+
+                                            default:
+
+                                                Console.WriteLine("\nInvalid Input");
+                                                break;
                                         }
 
-                                        goto main;
-                                    default: 
-                                        Console.WriteLine("\nInvalid Input");
-                                        break;
+                                    } while (choice != 0 && choice != 1);
                                 }
-                            }while(choice != 0 && choice != 1);
+
+                                else Console.WriteLine("\nWrong username or password.");
+
+
+                            }
 
                         }
-
-                        else Console.WriteLine("\nWrong username or password.");
 
                         break;
 
@@ -203,44 +254,79 @@ namespace Bank{
                         String? newUsername;
 
 
-                        Console.Write("\nEnter your full name: ");
+                        Console.Write("\nEnter your full name or \"cancel\" to cancel: ");
                         String? name = Console.ReadLine();
 
-                        do{
+                        if(!name!.Equals("cancel", StringComparison.OrdinalIgnoreCase)) { 
 
-                            Console.Write("\nEnter your email: ");
-                            email = Console.ReadLine();
+                            do{
 
-                            if(emailExists(email, accounts)) Console.WriteLine("\nAn account with that email already exists");
+                                Console.Write("\nEnter your email or \"cancel\" to cancel: ");
+                                email = Console.ReadLine();
 
-                        }while(emailExists(email, accounts));
+                                if(EmailExists(email)) Console.WriteLine("\nAn account with that email already exists");
 
-                        do{
+                            }while(EmailExists(email) && !email!.Equals("cancel", StringComparison.OrdinalIgnoreCase));
 
-                            Console.Write("\nEnter a username: ");
-                            newUsername = Console.ReadLine();
+                            if (!email!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                            {
 
-                            if(usernameExists(newUsername, accounts)) Console.WriteLine("\nAn account with that username already");
+                                do
+                                {
 
-                        }while(usernameExists(newUsername, accounts));
+                                    Console.Write("\nEnter a username or \"cancel\" to cancel: ");
+                                    newUsername = Console.ReadLine();
 
-                        Console.Write("\nEnter a password: ");
-                        newAccountPassword = Console.ReadLine();
-                        do{
+                                    if (!newUsername!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                    {
 
-                            Console.Write("\nEnter your password again: ");
-                            reEnteredPassword = Console.ReadLine();
-         
-                            if(!newAccountPassword!.Equals(reEnteredPassword)) Console.WriteLine("\nThe passwords doesn't match, please enter the password again."); 
+                                        if (UsernameExists(newUsername)) Console.WriteLine("\nAn account with that username already");
 
-                        }while(!newAccountPassword!.Equals(reEnteredPassword));
+                                    }
 
-                        accounts.Add(new Account(newUsername, newAccountPassword, name, email));
+                                } while (UsernameExists(newUsername) && !newUsername.Equals("cancel", StringComparison.OrdinalIgnoreCase));
 
-                        Console.WriteLine("\nAccount created successfully");
+                                if (!newUsername!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                {
+
+                                    Console.Write("\nEnter a password or \"cancel\" to cancel: ");
+                                    newAccountPassword = Console.ReadLine();
+
+                                    if (!newAccountPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                    {
+
+                                        do
+                                        {
+
+                                            Console.Write("\nEnter your password again or \"cancel\" to cancel: ");
+                                            reEnteredPassword = Console.ReadLine();
+
+                                            if (!reEnteredPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                            {
+
+                                                if (!newAccountPassword!.Equals(reEnteredPassword)) Console.WriteLine("\nThe passwords doesn't match, please enter the password again.");
+
+                                            }
+
+                                        } while (!newAccountPassword!.Equals(reEnteredPassword) && !reEnteredPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase));
+
+                                        if (!reEnteredPassword!.Equals("cancel", StringComparison.OrdinalIgnoreCase))
+                                        {
+
+                                            new Account(newUsername, newAccountPassword, name, email);
+
+                                            Console.WriteLine("\nAccount created successfully");
+                                        }
+                                    }
+                                }
+
+                            }
+                        }
 
                         break;
+
                     default: 
+
                         Console.WriteLine("\nInvalid input");
                         break;
                 }
@@ -250,38 +336,69 @@ namespace Bank{
 
         }
 
-        public static void home_menu(){
+        public static void HomeMenu(){
+
             Console.WriteLine("\n\t\tWelcome, please choose what do you want to do");
             Console.WriteLine("\n0. Exit");
             Console.WriteLine("1. Sign in");
             Console.WriteLine("2. Sign up");
+
         }
 
-        public static Account? rightLogin(String? u, String? p, List<Account> accounts){
+        public static Account? RightLogin(String? u, String? p){
 
-            foreach(var account in accounts){
-                
-                
-                if(account.Username != null){
+            string connstring = "SERVER=localhost; DATABASE=bank; UID=root; PASSWORD=;";
 
-                    if(account.Username.Equals(u, StringComparison.OrdinalIgnoreCase)){
+            MySqlConnection conn = new MySqlConnection(connstring);
 
-                        if (account.Password != null){
+            conn.Open();
 
-                            if(account.Password.Equals(p)) return account;
-                        
-                        }
+            string query = "SELECT COUNT(*) FROM accounts WHERE username = '" + u + "' and password = '" + p + "'";
 
-                    }
+            MySqlCommand cmd = new MySqlCommand(query, conn);
+
+             var result = cmd.ExecuteScalar();
+
+            if (Convert.ToInt32(result) > 0)
+            {
+
+                string? username = "";
+                string? password = "";
+                string? fullname = "";
+                string? email = "";
+                int balance = 0;
+                string query2 = "SELECT * FROM accounts WHERE username = '" + u + "'";
+
+                MySqlCommand cmd2 = new MySqlCommand(query2, conn);
+
+                MySqlDataReader reader = cmd2.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    username = Convert.ToString(reader["username"]);
+                    password = Convert.ToString(reader["password"]);
+                    fullname = Convert.ToString(reader["fullname"]);
+                    email = Convert.ToString(reader["email"]);
+                    balance = Convert.ToInt32(reader["balance"]);
+
                 }
 
+                reader.Close();
+
+                Account account = new Account(username, password, fullname, email, balance);
+                conn.Close();
+
+                return account;
+
             }
+
+            conn.Close();
 
             return null;
 
         }
 
-        public static void mainMenu(String? f){
+        public static void MainMenu(String? f){
 
             Console.WriteLine("\n\t\tWelcome back " + f);
             Console.WriteLine("\n0. Exit");
@@ -292,47 +409,142 @@ namespace Bank{
             Console.WriteLine("5. Add");
             Console.WriteLine("6. Make a Transfer");
             Console.WriteLine("7. Change Password");
+            Console.WriteLine("8. Delete Account");
 
         }
 
-        public static Account? exists(String? u, List<Account> accounts){
+        public static Account? Exists(String? u){
 
-            foreach(var account in accounts){
+            string connstring = "SERVER=localhost; DATABASE=bank; UID=root; PASSWORD=;";
 
-                if(account.Username != null){
+            MySqlConnection conn = new MySqlConnection(connstring);
 
-                    if(account.Username.Equals(u, StringComparison.OrdinalIgnoreCase)) return account;
+            conn.Open();
+
+            string query = "SELECT COUNT(*) FROM accounts WHERE username = '" + u + "'";
+
+            MySqlCommand cmd = new MySqlCommand(query, conn);
+
+            var result = cmd.ExecuteScalar();
+
+            if (Convert.ToInt32(result) > 0)
+            {
+
+                string? username = "";
+                string? password = "";
+                string? fullname = "";
+                string? email = "";
+                int balance = 0;
+                string query2 = "SELECT * FROM accounts WHERE username = '" + u + "'";
+
+                MySqlCommand cmd2 = new MySqlCommand(query2, conn);
+
+                MySqlDataReader reader = cmd2.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    username = Convert.ToString(reader["username"]);
+                    password = Convert.ToString(reader["password"]);
+                    fullname = Convert.ToString(reader["fullname"]);
+                    email = Convert.ToString(reader["email"]);
+                    balance = Convert.ToInt32(reader["balance"]);
+
                 }
+
+                reader.Close();
+
+                Account account = new Account(username, password, fullname, email, balance);
+                conn.Close();
+
+                return account;
+
             }
+
+            conn.Close();
 
             return null;
         } 
 
-        public static bool usernameExists(String? u, List<Account> accounts){
+        public static bool UsernameExists(String? u){
 
-            foreach(var account in accounts){
+            string connstring = "SERVER=localhost; DATABASE=bank; UID=root; PASSWORD=;";
 
-                if(account.Username != null){
+            MySqlConnection conn = new MySqlConnection(connstring);
 
-                    if(account.Username.Equals(u, StringComparison.OrdinalIgnoreCase)) return true;
-                }
+            conn.Open();
+
+            string query = "SELECT COUNT(*) FROM accounts WHERE username = '" + u + "'";
+
+            MySqlCommand cmd = new MySqlCommand(query, conn);
+
+            var result = cmd.ExecuteScalar();
+
+            if (Convert.ToInt32(result) > 0)
+            {
+                conn.Close();
+                return true;
             }
+
+            conn.Close();
 
             return false;
         }
 
-        public static bool emailExists(String? e, List<Account> accounts){
+        public static bool EmailExists(String? e){
 
-            foreach(var account in accounts){
+            string connstring = "SERVER=localhost; DATABASE=bank; UID=root; PASSWORD=;";
 
-                if(account.Email != null){
+            MySqlConnection conn = new MySqlConnection(connstring);
 
-                    if(account.Email.Equals(e, StringComparison.OrdinalIgnoreCase)) return true;
-                }
+            conn.Open();
+
+            string query = "SELECT COUNT(*) FROM accounts WHERE email = '" + e + "'";
+
+            MySqlCommand cmd = new MySqlCommand(query, conn);
+
+            var result = cmd.ExecuteScalar();
+
+            if (Convert.ToInt32(result) > 0)
+            {
+                conn.Close();
+                return true;
             }
+
+            conn.Close();
 
             return false;
             
+        }
+
+        public static bool DeleteAccount(string? u)
+        {
+            bool success = false;
+
+            try
+            {
+                string connstring = "SERVER=localhost; DATABASE=bank; UID=root; PASSWORD=;";
+
+                MySqlConnection conn = new MySqlConnection(connstring);
+
+                conn.Open();
+
+                string query = "DELETE FROM accounts WHERE username = '" + u + "'";
+
+                MySqlCommand cmd = new MySqlCommand(query, conn);
+
+                MySqlDataReader reader = cmd.ExecuteReader();
+                reader.Close();
+
+                success = true;
+
+            }catch(Exception e)
+            {
+                Console.WriteLine(e);
+                success = false;
+            }
+
+            return success;
+
         }
     }
 }
